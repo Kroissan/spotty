@@ -7,6 +7,7 @@ PROVIDER_AWS = 'aws'
 PROVIDER_GCP = 'gcp'
 PROVIDER_LOCAL = 'local'
 PROVIDER_REMOTE = 'remote'
+PROVIDER_VAST = 'vast'
 
 
 class InstanceManagerFactory(object):
@@ -16,6 +17,7 @@ class InstanceManagerFactory(object):
         PROVIDER_GCP,
         PROVIDER_LOCAL,
         PROVIDER_REMOTE,
+        PROVIDER_VAST
     ]
 
     @classmethod

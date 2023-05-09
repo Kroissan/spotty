@@ -11,7 +11,7 @@ from spotty.commands.start import StartCommand
 from spotty.commands.status import StatusCommand
 from spotty.commands.stop import StopCommand
 from spotty.commands.sync import SyncCommand
-
+from spotty.commands.vast import VastCommand
 
 def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
@@ -27,6 +27,7 @@ def get_parser() -> argparse.ArgumentParser:
        SyncCommand,
        DownloadCommand,
        AwsCommand,
+       VastCommand,
     ] + _get_custom_commands()
 
     # add commands to the parser
