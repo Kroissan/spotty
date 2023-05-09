@@ -29,7 +29,7 @@ class InstanceConfig(AbstractInstanceConfig):
 
     @property
     def user(self):
-        return 'ubuntu'
+        return 'root'
 
     @property
     def query(self) -> str:
@@ -68,3 +68,7 @@ class InstanceConfig(AbstractInstanceConfig):
         key_path = os.path.normpath(key_path)
 
         return key_path
+
+    @property
+    def host(self) -> str:
+        return self._params['imageLogin']

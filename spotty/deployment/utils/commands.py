@@ -99,6 +99,9 @@ def get_ssh_command(host: str, port: int, user: str, key_path: str, command: str
         command = '%s; %s' % (export_cmd, command)
 
     # final SSH command
-    ssh_command += ' %s@%s %s' % (user, host, shlex.quote(command))
+    ssh_command += ' %s@%s' % (user, host)
+
+    if command:
+        ssh_command += ' ' + shlex.quote(command)
 
     return ssh_command

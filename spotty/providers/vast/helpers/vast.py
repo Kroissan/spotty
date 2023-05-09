@@ -1382,8 +1382,7 @@ def show__user(args):
     :rtype:
     """
     req_url = apiurl(args, "/users/current", {"owner": "me"});
-    print(f"URL: {req_url}")
-    print("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHh\n")
+
     r = requests.get(req_url);
     r.raise_for_status()
     user_blob = r.json()
