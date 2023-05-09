@@ -11,6 +11,7 @@ class InstanceConfig(AbstractInstanceConfig):
 
     def __init__(self, instance_config: dict, project_config: ProjectConfig):
         super().__init__(instance_config, project_config)
+        self._host_project_dir = "/workspace"
 
     def _validate_instance_params(self, params: dict):
         # validate the config and fill missing parameters with the default values

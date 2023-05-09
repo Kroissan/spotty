@@ -6,6 +6,7 @@ import requests.exceptions
 
 
 def catch_stdout(func) -> str:
+    error = ValueError('Function returned no data.')
     for i in range(3):
         try:
             output_catch = io.StringIO()
@@ -15,5 +16,8 @@ def catch_stdout(func) -> str:
 
             # get the output as a string
             return output_catch.getvalue()
-        except requests.exceptions.HTTPError:
+        except requests.exceptions.HTTPError as e:
+            error = e
             time.sleep(15)
+
+    raise error

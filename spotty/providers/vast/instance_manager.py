@@ -12,8 +12,9 @@ import requests
 from spotty.commands.writers.abstract_output_writrer import AbstractOutputWriter
 from spotty.config.project_config import ProjectConfig
 from spotty.deployment.abstract_ssh_instance_manager import AbstractSshInstanceManager
+from spotty.deployment.container.vast.vast_commands import VastCommands
 from spotty.deployment.utils.commands import get_ssh_command
-from spotty.providers.remote.helpers.rsync import check_rsync_installed, get_upload_command
+from spotty.providers.remote.helpers.rsync import check_rsync_installed, get_upload_command, get_download_command
 from spotty.providers.vast.config.instance_config import InstanceConfig
 from spotty.providers.vast.helpers.catch_stdout import catch_stdout
 from spotty.providers.vast.helpers.vast import create__instance, search__offers, server_url_default, display_table, \
@@ -62,7 +63,10 @@ class InstanceManager(AbstractSshInstanceManager):
 
     def exec(self, command: str, tty: bool = True) -> int:
         """Executes a command on the host OS."""
-        super().exec(command='')
+        self._match_rsa_key()
+        if command == "$SHELL":
+            raise ValueError("Cannot run shell on Host on Vast.ai")
+        super().exec(command, tty)
 
     def start(self, output: AbstractOutputWriter, dry_run=False):
         # make sure the Dockerfile exists
@@ -88,7 +92,7 @@ class InstanceManager(AbstractSshInstanceManager):
             "image": self.instance_config.container_config.image,
             "env": ' '.join(
                 [f'-e {key}={value}' for key, value in self.instance_config.container_config.env.items()]) + ' ' +
-                 ' '.join([f"-p {i['containerPort']}:{i['containerPort']}" for i in
+                   ' '.join([f"-p {i['containerPort']}:{i['containerPort']}" for i in
                              self.instance_config.container_config.ports]),
             "price": machine['dph_base'] * 1.2,
             "disk": self.instance_config.root_volume_size,
@@ -113,8 +117,9 @@ class InstanceManager(AbstractSshInstanceManager):
         output_str = catch_stdout(lambda: create__instance(args))
 
         if json.loads(output_str)['success']:
-            for i in range(10):
-                time.sleep(15)
+            for i in range(20):
+                time.sleep(20)
+                print('.', end='')
 
                 instance = self._get_running_instances(force_update=True)
                 status = (instance.get('status_msg') or "").lower()
@@ -126,8 +131,14 @@ class InstanceManager(AbstractSshInstanceManager):
                     output.write(f"error message: {status}")
                     self.stop(False, output)
                     raise ValueError("Instance creation failed.")
+                elif i == 19:
+                    output.write(f"Instance creation timeout. Current instance status: {status}")
+                    output.write("check manually at https://cloud.vast.ai/instances/")
+                    raise ValueError("Instance creation failed.")
 
-            self._match_rsa_key(output)
+            self._match_rsa_key()
+            self.sync(output)
+            self.exec("echo 'HOME=/workspace && cd' >> /root/.bashrc")
 
     def stop(self, only_shutdown: bool, output: AbstractOutputWriter):
         instance_id = self._get_running_instances().get('id')
@@ -142,7 +153,7 @@ class InstanceManager(AbstractSshInstanceManager):
             output.write('Instance is not running.')
 
     def sync(self, output: AbstractOutputWriter, dry_run=False):
-
+        self._match_rsa_key()
         output.write('Syncing files with the instance...')
 
         # check rsync is installed
@@ -171,7 +182,7 @@ class InstanceManager(AbstractSshInstanceManager):
     def download(self, download_filters: list, output: AbstractOutputWriter, dry_run=False):
 
         output.write('Downloading files from the instance...')
-        exit()
+
         # check rsync is installed
         check_rsync_installed()
 
@@ -200,7 +211,7 @@ class InstanceManager(AbstractSshInstanceManager):
                      f"bid price: {self.instance_config.max_price}")
         query = self.instance_config.query.replace("\r\n", "\n").replace("\n", " ")
         query += f" disk_space>={self.instance_config.root_volume_size}"
-        query += f" direct_port_count>={len(self.instance_config.container_config.ports)}"
+        query += f" direct_port_count>{len(self.instance_config.container_config.ports)}"  # strict > to have at least one port for direct ssh
         query += " rentable=True"
 
         args = Namespace(**{
@@ -225,14 +236,16 @@ class InstanceManager(AbstractSshInstanceManager):
         else:
             raise ValueError('No instances found with these parameters.')
 
-    def _match_rsa_key(self, output: AbstractOutputWriter):
+    def _match_rsa_key(self):
         user = json.loads(catch_stdout(lambda: show__user(Namespace(**default_args))))
         if user["ssh_key"] != self.ssh_key_manager.get_public_key_value():
             print('Vast ai account already have a different RSA key registered.')
+            print('local:\n', self.ssh_key_manager.get_public_key_value())
+            print('remote:\n', user["ssh_key"])
             res = input('Type "y" to update it automatically: ')
             if res != 'y':
                 raise ValueError(f'Put your private rsa key in {self.ssh_key_manager.private_key_file}')
-            output.write("Updating RSA key...")
+            print("Updating RSA key...")
 
             url = apiurl(Namespace(**default_args), f"/users/{user['id']}/")
             requests.put(url, json={
@@ -247,16 +260,18 @@ class InstanceManager(AbstractSshInstanceManager):
                 'url': server_url_default,
             })
 
-            self.running_instance = next(iter(json.loads(catch_stdout(lambda: show__instances(args)))), {})
+            self.running_instance = next(filter(lambda x: x.get('label') == self.instance_config.name, json.loads(catch_stdout(lambda: show__instances(args)))), {})
 
         return self.running_instance or {}
 
     def get_status_text(self):
         instance = self._get_running_instances()
         table = [
-            ('CPU', instance.get('cpu_name') + f" ({int(instance.get('cpu_cores_effective'))}C/{instance.get('cpu_cores')}T)"),
-            ('GPU', f"{instance.get('num_gpus')}x {instance.get('gpu_name')} {int(instance.get('gpu_ram')/1024)}GB ({instance.get('total_flops')} TFLOPS) "),
-            ('Network Up/Down', f"{int(instance.get('inet_up')/1024)}/{int(instance.get('inet_down')/1024)} MB/s"),
+            ('CPU',
+             instance.get('cpu_name') + f" ({int(instance.get('cpu_cores_effective'))}C/{instance.get('cpu_cores')}T)"),
+            ('GPU',
+             f"{instance.get('num_gpus')}x {instance.get('gpu_name')} {int(instance.get('gpu_ram') / 1024)}GB ({instance.get('total_flops')} TFLOPS) "),
+            ('Network Up/Down', f"{int(instance.get('inet_up'))}/{int(instance.get('inet_down'))} MB/s  |  {int(instance.get('inet_up_billed')/1024)}/{int(instance.get('inet_down_billed')/1024)} billed"),
             ('Network Cost', f"${instance.get('inet_up_cost')}/{instance.get('inet_down_cost')} $/GB"),
             ('hourly price', f"${instance.get('dph_total')}/h"),
             ('public ip', instance.get('public_ipaddr')),
@@ -292,7 +307,13 @@ class InstanceManager(AbstractSshInstanceManager):
     def ssh_env_vars(self) -> dict:
         """Environmental variables that will be set when ssh to the instance."""
         return {}
+
     @property
     def use_tmux(self) -> bool:
         """As we can't connect to host on vast.ai, we can't install tmux"""
         return False
+
+    @property
+    def container_commands(self) -> VastCommands:
+        """A collection of commands to manage a container from the host OS."""
+        return VastCommands(self.instance_config)
