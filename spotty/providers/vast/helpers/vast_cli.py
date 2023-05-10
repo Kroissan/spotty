@@ -1450,7 +1450,7 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
         print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If
         you do not need this feature you can ignore this message. To get the library you should download the vast-python
         github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that
-        directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python
+        directory you can run 'vast_cli.py' and it will have access to 'vast_pdf.py'. The library depends on a Python
         package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
 
     try:
@@ -1556,7 +1556,7 @@ def generate__pdf_invoices(args):
         print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If
         you do not need this feature you can ignore this message. To get the library you should download the vast-python
         github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that
-        directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python
+        directory you can run 'vast_cli.py' and it will have access to 'vast_pdf.py'. The library depends on a Python
         package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
 
     req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me"})
@@ -1799,7 +1799,7 @@ def set__min_bid(args):
     usage="./vast schedule maintenance id [--sdate START_DATE --duration DURATION]",
     help="[Host] Schedule an upcoming maintenance window for a machine, notifying active clients",
     epilog=deindent("""
-        Example: ./vast.py schedule maint 8207 --sdate 1677562671 --duration 0.5
+        Example: ./vast_cli.py schedule maint 8207 --sdate 1677562671 --duration 0.5
     """),
     )
 def schedule__maint(args):

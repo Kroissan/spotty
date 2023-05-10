@@ -1,6 +1,6 @@
 import os
 
-from spotty.providers.vast.helpers.vast import api_key_file
+from spotty.providers.vast.helpers.vast_cli import api_key_file
 
 vast_api_key = ""
 if os.path.exists(api_key_file):

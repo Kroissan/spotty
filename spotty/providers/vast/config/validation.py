@@ -1,6 +1,6 @@
-from schema import Schema, Optional, And, Regex, Or, Use
+from schema import Optional, And, Regex, Or, Use
 from spotty.config.validation import validate_config, get_instance_parameters_schema
-from spotty.providers.vast.helpers.vast import parse_query
+from spotty.providers.vast.helpers.vast_cli import parse_query
 
 
 def validate_instance_parameters(params: dict):

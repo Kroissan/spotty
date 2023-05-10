@@ -1,5 +1,5 @@
 from argparse import ArgumentParser, Namespace
-from spotty.providers.vast.helpers.vast import set__api_key, api_key_file_base, api_key_guard
+from spotty.providers.vast.helpers.vast_cli import set__api_key, api_key_file_base, api_key_guard
 from spotty.commands.abstract_command import AbstractCommand
 from spotty.commands.writers.abstract_output_writrer import AbstractOutputWriter
 

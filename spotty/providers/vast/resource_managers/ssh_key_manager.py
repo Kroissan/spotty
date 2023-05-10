@@ -1,8 +1,15 @@
+import json
 import os
 import subprocess
+from argparse import Namespace
+
+import requests
+
 from spotty.configuration import get_spotty_keys_dir
 from shutil import which
 from spotty.providers.instance_manager_factory import PROVIDER_VAST
+from spotty.providers.vast.helpers.catch_stdout import catch_stdout
+from spotty.providers.vast.helpers.vast_cli import show__user, apiurl
 
 
 class SshKeyManager(object):
@@ -50,3 +57,20 @@ class SshKeyManager(object):
         res = subprocess.run(generate_key_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if res.returncode:
             raise subprocess.CalledProcessError(res.returncode, generate_key_cmd)
+
+    def match_rsa_key(self, args):
+        user = json.loads(catch_stdout(lambda: show__user(Namespace(**args))))
+        if user["ssh_key"] != self.get_public_key_value():
+            print('Vast ai account already have a different RSA key registered.')
+            print('local:\n', self.get_public_key_value())
+            print('remote:\n', user["ssh_key"])
+            res = input('Type "y" to update it automatically: ')
+            if res != 'y':
+                raise ValueError(f'Put your private rsa key in {self.private_key_file}')
+            print("Updating RSA key...")
+
+            url = apiurl(Namespace(**args), f"/users/{user['id']}/")
+            requests.put(url, json={
+                "ssh_key": self.get_public_key_value()
+            })
+

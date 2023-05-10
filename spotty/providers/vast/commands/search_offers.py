@@ -1,7 +1,7 @@
 from argparse import ArgumentParser, Namespace
-from spotty.providers.vast.helpers.vast import search__offers, deindent, api_key_guard, api_key_file_base, \
+from spotty.providers.vast.helpers.vast_cli import search__offers, deindent, api_key_guard, api_key_file_base, \
     server_url_default
-from spotty.providers.vast.helpers.vast import parser as vast_parser
+from spotty.providers.vast.helpers.vast_cli import parser as vast_parser
 
 from spotty.commands.abstract_command import AbstractCommand
 from spotty.commands.writers.abstract_output_writrer import AbstractOutputWriter
