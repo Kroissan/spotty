@@ -73,7 +73,7 @@ class InstanceDeployment(AbstractInstanceDeployment):
             "label": self.instance_config.name,
             "extra": None,
             "onstart": None,
-            "onstart_cmd": self.startup_script,
+            "onstart_cmd": self._startup_script,
             "args": None,
             "login": login,
             "python_utf8": False,
@@ -141,6 +141,14 @@ class InstanceDeployment(AbstractInstanceDeployment):
         else:
             raise ValueError('No instances found with these parameters.')
 
+    def _startup_script(self) -> str:
+        commands = f"echo 'HOME={self.instance_config.host_project_dir}' >> /root/.bashrc\n"
+        commands += f"echo 'cd' >> /root/.bashrc\n"
+        if self.instance_config.container_config.commands:
+            commands += self.instance_config.container_config.commands
+
+        return commands
+
     def delete(self, output: AbstractOutputWriter):
         instance_id = self.get_instance().get('id')
         if instance_id:
@@ -165,11 +173,3 @@ class InstanceDeployment(AbstractInstanceDeployment):
 
         raise ValueError('No ssh port found.')
 
-    @property
-    def startup_script(self) -> str:
-        commands = f"echo 'HOME={self.instance_config.host_project_dir}' >> /root/.bashrc\n"
-        commands += f"echo 'cd' >> /root/.bashrc\n"
-        if self.instance_config.container_config.commands:
-            commands += self.instance_config.container_config.commands
-
-        return commands
