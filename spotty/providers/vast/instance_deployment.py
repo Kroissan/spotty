@@ -49,7 +49,7 @@ class InstanceDeployment(AbstractInstanceDeployment):
                bucket_name: str = None, data_transfer: AbstractDataTransfer = None, dry_run: bool = False):
         machine = self._find_instance(output)
 
-        if 'docker login' not in self.instance_config.image_login:
+        if self.instance_config.image_login and 'docker login' not in self.instance_config.image_login:
             login = subprocess.check_output(self.instance_config.image_login, shell=True).decode().split('\n')[0]
         else:
             login = self.instance_config.image_login
