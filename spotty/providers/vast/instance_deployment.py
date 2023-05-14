@@ -57,13 +57,16 @@ class InstanceDeployment(AbstractInstanceDeployment):
         if login:
             login = login.split('docker login ')[-1]
 
+        env = []
+        if self.instance_config.container_config.env:
+            env += [f'-e {key}={value}' for key, value in self.instance_config.container_config.env.items()]
+        if self.instance_config.container_config.ports:
+            env += [f"-p {i['containerPort']}:{i['containerPort']}" for i in self.instance_config.container_config.ports]
+
         args = Namespace(**{
             "id": machine['id'],
             "image": self.instance_config.container_config.image,
-            "env": ' '.join(
-                [f'-e {key}={value}' for key, value in self.instance_config.container_config.env.items()]) + ' ' +
-                   ' '.join([f"-p {i['containerPort']}:{i['containerPort']}" for i in
-                             self.instance_config.container_config.ports]),
+            "env": ' '.join(env),
             "price": machine['dph_base'] * self.instance_config.bid_ratio,
             "disk": self.instance_config.root_volume_size,
             "label": self.instance_config.name,
