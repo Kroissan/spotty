@@ -66,7 +66,7 @@ class InstanceManager(RemoteInstanceManager):
                     raise e
 
             self.sync(output)
-            self.exec("echo 'HOME=/workspace && cd' >> /root/.bashrc")
+
 
     def stop(self, only_shutdown: bool, output: AbstractOutputWriter):
         if only_shutdown:

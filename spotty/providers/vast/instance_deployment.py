@@ -61,7 +61,8 @@ class InstanceDeployment(AbstractInstanceDeployment):
         if self.instance_config.container_config.env:
             env += [f'-e {key}={value}' for key, value in self.instance_config.container_config.env.items()]
         if self.instance_config.container_config.ports:
-            env += [f"-p {i['containerPort']}:{i['containerPort']}" for i in self.instance_config.container_config.ports]
+            env += [f"-p {i['containerPort']}:{i['containerPort']}" for i in
+                    self.instance_config.container_config.ports]
 
         args = Namespace(**{
             "id": machine['id'],
@@ -72,7 +73,7 @@ class InstanceDeployment(AbstractInstanceDeployment):
             "label": self.instance_config.name,
             "extra": None,
             "onstart": None,
-            "onstart_cmd": None,
+            "onstart_cmd": self.startup_script,
             "args": None,
             "login": login,
             "python_utf8": False,
@@ -163,3 +164,12 @@ class InstanceDeployment(AbstractInstanceDeployment):
                 return int(host[0]['HostPort'])
 
         raise ValueError('No ssh port found.')
+
+    @property
+    def startup_script(self) -> str:
+        commands = f"echo 'HOME={self.instance_config.host_project_dir}' >> /root/.bashrc\n"
+        commands += f"echo 'cd' >> /root/.bashrc\n"
+        if self.instance_config.container_config.commands:
+            commands += self.instance_config.container_config.commands
+
+        return commands
