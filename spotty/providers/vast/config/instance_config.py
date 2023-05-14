@@ -45,8 +45,8 @@ class InstanceConfig(AbstractInstanceConfig):
         return self._params['sort']
 
     @property
-    def max_price(self) -> float:
-        return self._params['maxPrice']
+    def bid_ratio(self) -> float:
+        return self._params['bidRatio']
 
     @property
     def root_volume_size(self) -> int:

@@ -64,7 +64,7 @@ class InstanceDeployment(AbstractInstanceDeployment):
                 [f'-e {key}={value}' for key, value in self.instance_config.container_config.env.items()]) + ' ' +
                    ' '.join([f"-p {i['containerPort']}:{i['containerPort']}" for i in
                              self.instance_config.container_config.ports]),
-            "price": machine['dph_base'] * 1.2,
+            "price": machine['dph_base'] * self.instance_config.bid_ratio,
             "disk": self.instance_config.root_volume_size,
             "label": self.instance_config.name,
             "extra": None,
@@ -88,7 +88,7 @@ class InstanceDeployment(AbstractInstanceDeployment):
 
         if json.loads(output_str)['success']:
             for i in range(20):
-                time.sleep(20)
+                time.sleep(30)
 
                 instance = self.get_instance(force_update=True)
                 status = (instance.get('status_msg') or "").lower()
@@ -109,8 +109,7 @@ class InstanceDeployment(AbstractInstanceDeployment):
 
     def _find_instance(self, output: AbstractOutputWriter) -> dict:
         output.write(f"Finding instance related to query:\n{self.instance_config.query}"
-                     f"sorted by: {self.instance_config.sort}\n"
-                     f"bid price: {self.instance_config.max_price}")
+                     f"sorted by: {self.instance_config.sort}\n")
         query = self.instance_config.query.replace("\r\n", "\n").replace("\n", " ")
         query += f" disk_space>={self.instance_config.root_volume_size}"
         query += f" direct_port_count>{len(self.instance_config.container_config.ports)}"  # strict > to have at least one port for direct ssh
@@ -131,7 +130,7 @@ class InstanceDeployment(AbstractInstanceDeployment):
         output_str = catch_stdout(lambda: search__offers(args))
         selected_machine = next(iter(json.loads(output_str)), None)
 
-        if selected_machine and selected_machine['dph_total'] <= self.instance_config.max_price:
+        if selected_machine:
             output.write("\n\nselected machine:")
             display_table([selected_machine], displayable_fields)
             return selected_machine

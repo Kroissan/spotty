@@ -10,10 +10,10 @@ def validate_instance_parameters(params: dict):
         Optional('query', default=''): And(str, lambda x: parse_query(x.replace('\r\n', '\n').replace('\n', ' '))),
         Optional('type', default='on-demand'): And(str, lambda x: x in ['bid', 'on-demand']),
         Optional('sort', default='on-demand'): str,
-        Optional('maxPrice', default=0): And(Or(float, int, str), Use(str),
+        Optional('bidRatio', default=0): And(Or(float, int, str), Use(str),
                                              Regex(r'^\d+(\.\d{1,6})?$', error='Incorrect value for "maxPrice".'),
                                              Use(float),
-                                             And(lambda x: x > 0, error='"maxPrice" should be greater than 0 or '
+                                             And(lambda x: x > 0, error='"bidRatio" should be greater than 0 or '
                                                                         'should  not be specified.'),
                                              ),
         Optional('rootVolumeSize', default=16): And(Or(int, str), Use(str),
