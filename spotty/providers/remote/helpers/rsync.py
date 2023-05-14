@@ -11,9 +11,6 @@ def check_rsync_installed():
 
 def get_upload_command(local_dir: str, remote_dir: str, ssh_user: str, ssh_host: str, ssh_port: int,
                        ssh_key_path: str, filters: List[dict] = None, use_sudo: bool = False, dry_run: bool = False):
-    # make sure there is only one list of exclude filters
-    if (len(filters) > 1) or (len(filters[0]) > 1) or ('include' in filters[0]):
-        raise ValueError('At the moment "remote" provider supports only one list of exclude filters.')
 
     remote_path = '%s@%s:%s' % (ssh_user, ssh_host, remote_dir)
 
@@ -25,7 +22,6 @@ def get_download_command(remote_dir: str, local_dir: str, ssh_user: str, ssh_hos
                          ssh_key_path: str, filters: List[dict] = None, use_sudo: bool = False, dry_run: bool = False):
     filters = filters[::-1]
     remote_path = '%s@%s:%s' % (ssh_user, ssh_host, remote_dir)
-
     return _get_rsync_command(remote_path, local_dir, ssh_port, ssh_key_path, filters, use_sudo=use_sudo,
                               dry_run=dry_run)
 
