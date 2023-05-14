@@ -1,4 +1,5 @@
 import json
+import subprocess
 import time
 from argparse import Namespace
 
@@ -48,6 +49,14 @@ class InstanceDeployment(AbstractInstanceDeployment):
                bucket_name: str = None, data_transfer: AbstractDataTransfer = None, dry_run: bool = False):
         machine = self._find_instance(output)
 
+        if 'docker login' not in self.instance_config.image_login:
+            login = subprocess.check_output(self.instance_config.image_login, shell=True).decode().split('\n')[0]
+        else:
+            login = self.instance_config.image_login
+
+        if login:
+            login = login.split('docker login ')[-1]
+
         args = Namespace(**{
             "id": machine['id'],
             "image": self.instance_config.container_config.image,
@@ -62,7 +71,7 @@ class InstanceDeployment(AbstractInstanceDeployment):
             "onstart": None,
             "onstart_cmd": None,
             "args": None,
-            "login": self.instance_config.image_login,
+            "login": login,
             "python_utf8": False,
             "lang_utf8": False,
             "jupyter": False,
